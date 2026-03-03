@@ -1,0 +1,83 @@
+/* =========================================================
+   TYPOGRAPHY — Arabic & UI Font Systems
+   ========================================================= */
+
+/* ── UI Text ── */
+.text-display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+.text-heading {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: var(--leading-tight);
+    letter-spacing: -0.01em;
+}
+
+.text-body {
+    font-family: var(--font-ui);
+    font-weight: 400;
+    line-height: var(--leading-normal);
+}
+
+.text-caption {
+    font-family: var(--font-ui);
+    font-weight: 400;
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+}
+
+.text-label {
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-tertiary);
+}
+
+/* ── Arabic Text ── */
+.text-arabic {
+    font-family: var(--font-arabic);
+    direction: rtl;
+    text-align: right;
+    line-height: var(--leading-arabic);
+    font-feature-settings: "liga" 1, "calt" 1;
+}
+
+.text-arabic-verse {
+    font-family: var(--font-arabic);
+    font-size: var(--arabic-verse);
+    direction: rtl;
+    text-align: right;
+    line-height: var(--leading-arabic);
+    color: var(--color-text);
+    font-feature-settings: "liga" 1, "calt" 1;
+}
+
+.text-arabic-title {
+    font-family: var(--font-arabic);
+    font-size: var(--arabic-title);
+    direction: rtl;
+    text-align: right;
+    line-height: var(--leading-tight);
+    color: var(--color-text);
+}
+
+/* ── Verse Number (Arabic-Indic numerals feel) ── */
+.verse-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    border: 1.5px solid var(--color-accent);
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-accent);
+    flex-shrink: 0;
+}

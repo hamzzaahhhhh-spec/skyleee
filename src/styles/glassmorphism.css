@@ -1,0 +1,58 @@
+/* =========================================================
+   GLASSMORPHISM — Nava-e-Ayat Frosted Glass
+   ========================================================= */
+
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+}
+
+.glass-strong {
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--glass-blur-heavy));
+    -webkit-backdrop-filter: blur(var(--glass-blur-heavy));
+    border: 1px solid var(--glass-border);
+}
+
+.glass-nav {
+    background: rgba(250, 250, 250, 0.82);
+    backdrop-filter: blur(var(--glass-blur-heavy)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--glass-blur-heavy)) saturate(180%);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--duration-normal) var(--ease-spring),
+        box-shadow var(--duration-normal) var(--ease-smooth),
+        background var(--duration-normal) var(--ease-smooth),
+        border-color var(--duration-normal) var(--ease-smooth);
+}
+
+.glass-card:hover {
+    background: var(--color-surface-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--color-border-teal);
+}
+
+.glass-card:active {
+    background: var(--color-surface-active);
+    transform: translateY(0) scale(0.98);
+    box-shadow: var(--shadow-xs);
+    transition-duration: var(--duration-fast);
+}
+
+.glass-player {
+    background: rgba(250, 250, 250, 0.88);
+    backdrop-filter: blur(var(--glass-blur-heavy)) saturate(200%);
+    -webkit-backdrop-filter: blur(var(--glass-blur-heavy)) saturate(200%);
+    border-top: 1px solid var(--color-border);
+}

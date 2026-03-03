@@ -1,0 +1,285 @@
+/* =========================================================
+   ANIMATIONS — Nava-e-Ayat Keyframes & Utilities
+   ========================================================= */
+
+/* ── Staggered Fade-in + Slide ("Unfolding a letter") ── */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(28px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+/* ── Slide transitions ── */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(60px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutLeft {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(-60px);
+    }
+}
+
+/* ── Breathing Pulse (verse contemplation) ── */
+@keyframes breathe {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.4;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 0.75;
+    }
+}
+
+@keyframes breatheGlow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 30px rgba(0, 191, 165, 0.03);
+    }
+
+    50% {
+        box-shadow: 0 0 50px rgba(0, 191, 165, 0.12);
+    }
+}
+
+/* ── Golden Aura (7-day streak unlock) ── */
+@keyframes goldenAura {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.08),
+            0 0 60px rgba(212, 175, 55, 0.05);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(212, 175, 55, 0.18),
+            0 0 80px rgba(212, 175, 55, 0.10);
+    }
+}
+
+/* ── Spring expand (search bar, modals) ── */
+@keyframes springExpand {
+    0% {
+        transform: scaleX(0.6) scaleY(0.8);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scaleX(1.03) scaleY(1.02);
+        opacity: 1;
+    }
+
+    80% {
+        transform: scaleX(0.99) scaleY(0.99);
+    }
+
+    100% {
+        transform: scaleX(1) scaleY(1);
+    }
+}
+
+/* ── Liquid Touch Ripple ── */
+@keyframes liquidRipple {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0.5;
+    }
+
+    60% {
+        opacity: 0.2;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(4);
+        opacity: 0;
+    }
+}
+
+/* ── Waveform pulse (circular "Nava" pattern) ── */
+@keyframes navaPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.4;
+    }
+
+    50% {
+        transform: scale(1.15);
+        opacity: 0.1;
+    }
+}
+
+/* ── Shimmer loading ── */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* ── Streak flame flicker ── */
+@keyframes flameFlicker {
+
+    0%,
+    100% {
+        transform: scaleY(1) translateY(0);
+    }
+
+    25% {
+        transform: scaleY(1.05) translateY(-1px);
+    }
+
+    50% {
+        transform: scaleY(0.97) translateY(1px);
+    }
+
+    75% {
+        transform: scaleY(1.03) translateY(-0.5px);
+    }
+}
+
+/* ── Progress ring fill ── */
+@keyframes ringFill {
+    from {
+        stroke-dashoffset: 283;
+    }
+}
+
+/* ── Gradient shift (brand accent) ── */
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* ── Scale bounce ── */
+@keyframes scaleBounce {
+    0% {
+        transform: scale(1);
+    }
+
+    30% {
+        transform: scale(1.25);
+    }
+
+    60% {
+        transform: scale(0.9);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ── Utility Classes ── */
+.animate-fade-in-up {
+    animation: fadeInUp var(--duration-slow) var(--ease-spring-heavy) both;
+}
+
+.animate-fade-in {
+    animation: fadeIn var(--duration-normal) var(--ease-smooth) both;
+}
+
+.animate-slide-in-right {
+    animation: slideInRight var(--duration-slow) var(--ease-spring-heavy) both;
+}
+
+.animate-breathing {
+    animation: breatheGlow var(--duration-breath) ease-in-out infinite;
+}
+
+.animate-golden-aura {
+    animation: goldenAura 3s ease-in-out infinite;
+}
+
+.animate-spring-expand {
+    animation: springExpand var(--duration-slow) var(--ease-spring) both;
+}
+
+.animate-shimmer {
+    background: linear-gradient(90deg, var(--color-bg-warm) 25%, var(--color-surface-solid) 50%, var(--color-bg-warm) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.stagger {
+    animation-delay: calc(var(--stagger-i, 0) * 50ms);
+}
+
+.view-enter {
+    animation: fadeInUp var(--duration-hero) var(--ease-spring-heavy) both;
+}
+
+.view-exit {
+    animation: fadeOut var(--duration-normal) var(--ease-smooth) both;
+    pointer-events: none;
+}
