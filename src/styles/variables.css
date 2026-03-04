@@ -6,14 +6,14 @@
    ========================================================= */
 
 :root {
-    /* ── Surface Colors (Pure White Foundation) ── */
-    --color-bg: #FAFAFA;
-    --color-bg-warm: #F5F5F5;
-    --color-bg-cool: #F0F7F6;
-    --color-surface: rgba(255, 255, 255, 0.80);
-    --color-surface-hover: rgba(255, 255, 255, 0.95);
+    /* ── Surface Colors (Soft Cream Foundation) ── */
+    --color-bg: #FDFCF9;
+    --color-bg-warm: #F8F6F1;
+    --color-bg-cool: #F2EEFB;
+    --color-surface: rgba(253, 252, 249, 0.85);
+    --color-surface-hover: rgba(253, 252, 249, 0.95);
     --color-surface-active: #FFFFFF;
-    --color-surface-solid: #FFFFFF;
+    --color-surface-solid: #FDFCF9;
 
     /* ── Text Colors ── */
     --color-text: #1A1D2E;

@@ -79,6 +79,58 @@ export class SurahListView {
         searchContainer.appendChild(searchBar);
         scrollContent.appendChild(searchContainer);
 
+        // Challenges Hub
+        const challengesContainer = document.createElement('div');
+        challengesContainer.className = 'challenges-container';
+        challengesContainer.innerHTML = `
+            <h2 class="challenges-title">Challenges Hub</h2>
+            <div class="challenges-grid">
+                
+                <div class="challenge-card glass-card">
+                    <div class="challenge-card__bg ramadan-bg"></div>
+                    <div class="challenge-card__content">
+                        <div class="challenge-header">
+                            <span class="challenge-badge live">Live</span>
+                            <h3>Ramadan Qiyam</h3>
+                        </div>
+                        <p class="challenge-desc">Read 10 mins daily for 30 days</p>
+                        <div class="challenge-progress">
+                            <div class="challenge-progress-bar">
+                                <div class="challenge-progress-fill fade" id="ramadan-fill" style="width: 0%"></div>
+                            </div>
+                            <span class="challenge-text" id="ramadan-text">Tracking progress...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="challenge-card glass-card">
+                    <div class="challenge-card__bg global-bg"></div>
+                    <div class="challenge-card__content">
+                        <div class="challenge-header">
+                            <span class="challenge-badge global">Global</span>
+                            <h3>1M Khatm</h3>
+                        </div>
+                        <p class="challenge-desc">Join 150K readers globally</p>
+                        <div class="challenge-metrics">
+                            <div class="metric"><span class="val">420K</span><span class="lbl">Juz</span></div>
+                            <div class="metric"><span class="val">150K</span><span class="lbl">Readers</span></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        `;
+        scrollContent.appendChild(challengesContainer);
+
+        // Surah Grid Title
+        const gridTitle = document.createElement('h2');
+        gridTitle.className = 'challenges-title';
+        gridTitle.style.marginTop = '2rem';
+        gridTitle.style.marginBottom = '20px';
+        gridTitle.style.padding = '0 var(--layout-edge)';
+        gridTitle.textContent = 'All Surahs';
+        scrollContent.appendChild(gridTitle);
+
         // Grid
         this.gridEl = document.createElement('div');
         this.gridEl.className = 'surah-grid';

@@ -137,11 +137,33 @@ export class App {
                 this.rootEl,
                 surahData,
                 () => this._goBack(),
-                () => this._playAudio(surah)
+                () => this._playAudio(surahData)
             );
 
             if (this.audioPlayer) {
-                this.audioPlayer.loadSurah(getAudioUrl(surah.number), surah.englishName);
+                // Verse change callback — updates active verse highlight
+                this.audioPlayer.onVerseChange = (verseIndex) => {
+                    if (this.readingView) {
+                        this.readingView.onSurahVerseChanged(verseIndex);
+                    }
+                };
+
+                // High-frequency rAF frame sync for word/progress indicators
+                this.audioPlayer.onPlaybackFrame = (frame) => {
+                    if (this.readingView) {
+                        this.readingView.onSurahPlaybackFrame(frame);
+                    }
+                };
+
+                // Bug 2 fix: sync navbar top-right play/pause icon with engine state
+                this.audioPlayer.onPlayStateChange = (isPlaying) => {
+                    if (this.readingView) {
+                        this.readingView.updatePlayState(isPlaying);
+                    }
+                };
+
+                // Load full Surah for continuous verse-by-verse playback
+                this.audioPlayer.loadSurahForPlayback(surahData);
                 this.audioPlayer.show();
             }
 
@@ -167,10 +189,27 @@ export class App {
             this.readingView = null;
         }
 
+        if (this.audioPlayer) {
+            this.audioPlayer.onVerseChange = null;
+            this.audioPlayer.onPlaybackFrame = null;
+            this.audioPlayer.onPlayStateChange = null;
+        }
+
         this._showSurahList();
     }
 
-    _playAudio(surah) {
-        if (this.audioPlayer) this.audioPlayer.togglePlay();
+    _playAudio(surahData) {
+        if (!this.audioPlayer) return;
+
+        // loadSurahForPlayback already ran in _openSurah.
+        // Calling it again resets activeVerseIndex → 0 mid-playback (Bug 1).
+        // Only reload if somehow totalVerses is 0 (first-time guard).
+        if (this.audioPlayer.totalVerses === 0) {
+            this.audioPlayer.loadSurahForPlayback(surahData);
+            setTimeout(() => this.audioPlayer.togglePlay(), 80);
+        } else {
+            // Surah already loaded — just toggle play/pause
+            this.audioPlayer.togglePlay();
+        }
     }
 }

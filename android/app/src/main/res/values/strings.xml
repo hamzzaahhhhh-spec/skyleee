@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Nava-e-Ayat</string>
+    <string name="title_activity_main">Nava-e-Ayat</string>
+    <string name="package_name">com.navaeayat.app</string>
+    <string name="custom_url_scheme">com.navaeayat.app</string>
+</resources>

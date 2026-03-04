@@ -882,3 +882,18 @@
     width: 100%;
     pointer-events: none;
 }
+
+.app-branding {
+    position: fixed;
+    bottom: 2px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    padding: 8px;
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    z-index: 100;
+    pointer-events: none;
+    letter-spacing: 0.05em;
+    font-family: var(--font-sans);
+}

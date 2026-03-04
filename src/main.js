@@ -4,6 +4,7 @@
  */
 
 import './styles/main.css';
+import './styles/challenges.css';
 import { DivineLight } from './engine/shader.js';
 import { LiquidTouch } from './engine/liquidTouch.js';
 import { App } from './components/App.js';
@@ -25,4 +26,6 @@ const liquidTouch = new LiquidTouch();
 const appRoot = document.getElementById('app');
 if (appRoot) {
     const app = new App(appRoot);
+    // Expose for DevTools debugging: __app.audioPlayer.audio.src / .error / .totalVerses
+    window.__app = app;
 }

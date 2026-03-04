@@ -11,8 +11,14 @@ export class AudioPlayer {
     constructor(container) {
         this.container = container;
         this.audio = new Audio();
+        // Do NOT set crossOrigin='anonymous' — cdn.islamic.network does not send
+        // Access-Control-Allow-Origin, so setting it blocks every request.
+        // The waveform analyser will fall back to animated bars gracefully.
+        this.audio.preload = 'auto';
+        this.audio.controls = false;
         this.isPlaying = false;
         this.currentSurah = null;
+        this.currentSurahAyahs = [];
         this.audioContext = null;
         this.analyser = null;
         this.canvasEl = null;
@@ -21,6 +27,18 @@ export class AudioPlayer {
         this.playBtn = null;
         this.playerEl = null;
         this.navaRings = [];
+        this.activeVerseIndex = 0;
+        this.totalVerses = 0;
+        this.verseAudioUrls = [];
+        this.onVerseChange = null;
+        this.onPlaybackFrame = null;
+        this._syncRafId = null;
+        this._advanceLock = false;
+        this._userPaused = false;
+        this._prefetchedAudio = null;
+        this._prefetchedIndex = -1;
+        this.onPlayStateChange = null; // (isPlaying: boolean) => void
+        this.currentSurahNumber = 1;  // stored for everyayah.com URL padding
 
         this._render();
     }
@@ -75,16 +93,21 @@ export class AudioPlayer {
         this.playerEl.appendChild(this.canvasEl);
         this.container.appendChild(this.playerEl);
 
-        this.audio.addEventListener('ended', () => {
-            this.isPlaying = false;
-            morphIcon(this.playBtn.querySelector('svg'), 'play');
-            this._setNavaRings(false);
-            this._stopWaveform();
+        // GAPLESS CHAIN — single synchronous-style handler, no async race
+        this.audio.addEventListener('ended', () => this._playNextVerse());
+
+        this.audio.addEventListener('error', (e) => {
+            // Only skip-and-advance if we're actively playing, not on initial load failure
+            if (this.isPlaying && !this._userPaused && !this.audio.paused) {
+                console.warn('[AudioPlayer] Audio error during playback, skipping verse', this.activeVerseIndex + 1, e);
+                this._playNextVerse();
+            } else {
+                console.warn('[AudioPlayer] Audio load error (not playing):', e);
+                this.subtitleEl.textContent = 'Audio unavailable';
+            }
         });
 
-        this.audio.addEventListener('error', () => {
-            this.subtitleEl.textContent = 'Audio unavailable';
-        });
+        this.audio.addEventListener('timeupdate', () => this._checkPrefetch());
     }
 
     loadSurah(url, surahName) {
@@ -101,22 +124,64 @@ export class AudioPlayer {
 
     togglePlay() {
         impactLight();
+        console.log('[AudioPlayer] togglePlay called. isPlaying:', this.isPlaying, 'totalVerses:', this.totalVerses);
+
         if (this.isPlaying) {
+            this._userPaused = true;
             this.audio.pause();
-            this.isPlaying = false;
+            this._setPlayingState(false);
+        } else {
+            if (this.totalVerses === 0) {
+                console.error('[AudioPlayer] No surah loaded');
+                this.subtitleEl.textContent = 'No audio loaded';
+                return;
+            }
+
+            this._userPaused = false;
+
+            // Always force-set the src to the correct verse URL.
+            // This guarantees the audio element has a valid, fresh source
+            // pointing at everyayah.com regardless of prior state.
+            const url = this.verseAudioUrls[this.activeVerseIndex];
+            this.audio.src = url;
+
+            console.log('[AudioPlayer] Starting playback — verse', this.activeVerseIndex + 1, url);
+
+            // Notify UI immediately so it scrolls/highlights the verse now
+            this._safeNotifyVerseChange(this.activeVerseIndex);
+
+            // load() inside the trusted user-click event chain = CORS allowed.
+            // play() returns a promise that resolves once enough data is buffered.
+            this.audio.load();
+            this.audio.play()
+                .then(() => {
+                    console.log('[AudioPlayer] Play started successfully');
+                    this._setPlayingState(true);
+                })
+                .catch((err) => {
+                    console.error('[AudioPlayer] play() failed:', err);
+                    this.subtitleEl.textContent = 'Tap again to play';
+                });
+        }
+    }
+
+    // Central playing-state manager — all visual + callback updates go here
+    _setPlayingState(playing) {
+        this.isPlaying = playing;
+        if (playing) {
+            morphIcon(this.playBtn.querySelector('svg'), 'pause');
+            this._setNavaRings(true);
+            this._initAudioContext();
+            this._startWaveform();
+            this._startSyncLoop();
+        } else {
             morphIcon(this.playBtn.querySelector('svg'), 'play');
             this._setNavaRings(false);
             this._stopWaveform();
-        } else {
-            this.audio.play().then(() => {
-                this.isPlaying = true;
-                morphIcon(this.playBtn.querySelector('svg'), 'pause');
-                this._initAudioContext();
-                this._setNavaRings(true);
-                this._startWaveform();
-            }).catch(() => {
-                this.subtitleEl.textContent = 'Tap again to play';
-            });
+            this._stopSyncLoop();
+        }
+        if (this.onPlayStateChange) {
+            try { this.onPlayStateChange(playing); } catch (e) { /* ignore */ }
         }
     }
 
@@ -127,15 +192,18 @@ export class AudioPlayer {
     }
 
     _initAudioContext() {
-        if (this.audioContext) return;
-        try {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            this.analyser = this.audioContext.createAnalyser();
-            this.analyser.fftSize = 64;
-            const source = this.audioContext.createMediaElementSource(this.audio);
-            source.connect(this.analyser);
-            this.analyser.connect(this.audioContext.destination);
-        } catch (e) { }
+        // IMPORTANT: Do NOT call createMediaElementSource(this.audio) here.
+        //
+        // createMediaElementSource() hijacks the <audio> element's output and
+        // routes ALL sound through the Web Audio API graph. When the audio is
+        // cross-origin (everyayah.com) without CORS headers on the element,
+        // the Web Audio API security model ZEROES OUT the entire audio signal.
+        // Result: currentTime advances, 'ended' fires, but the user hears
+        // COMPLETE SILENCE.
+        //
+        // The waveform visualizer uses the animated fallback bars instead,
+        // which look great and don't require Web Audio API at all.
+        this.analyser = null;
     }
 
     _startWaveform() {
@@ -232,17 +300,220 @@ export class AudioPlayer {
     hide() {
         this.audio.pause();
         this.isPlaying = false;
+        this._advanceLock = false;
+        this._userPaused = false;
+        this._stopSyncLoop();
+        this._destroyPrefetch();
         this._setNavaRings(false);
         this._stopWaveform();
         this.playerEl.style.display = 'none';
     }
 
+    loadSurahForPlayback(surahData) {
+        console.log('[AudioPlayer] Loading Surah for playback:', surahData.arabic.englishName);
+
+        this.currentSurah = surahData.arabic.englishName;
+        this.currentSurahNumber = surahData.arabic.number; // stored for URL padding
+        this.currentSurahAyahs = surahData.arabic.ayahs;
+        this.totalVerses = surahData.arabic.ayahs.length;
+        this.activeVerseIndex = 0;
+        this._advanceLock = false;
+        this._userPaused = false;
+        this._destroyPrefetch();
+
+        // ── CDN: everyayah.com — serves all files with Access-Control-Allow-Origin: *
+        // URL format: /{surah_3digits}{verse_3digits}.mp3
+        // e.g. Al-Fatiha v1 = 001001.mp3  |  Al-Kahf v1 = 018001.mp3
+        const sNum = String(surahData.arabic.number).padStart(3, '0');
+        this.verseAudioUrls = surahData.arabic.ayahs.map(ayah => {
+            const vNum = String(ayah.numberInSurah).padStart(3, '0');
+            return `https://everyayah.com/data/Alafasy_128kbps/${sNum}${vNum}.mp3`;
+        });
+
+        // Set src only — do NOT call load() here.
+        // load() outside a user-gesture context can still be blocked by some browsers.
+        // togglePlay() will call load() inside the trusted click event chain.
+        this.audio.src = this.verseAudioUrls[0];
+
+        console.log('[AudioPlayer] First verse URL:', this.verseAudioUrls[0]);
+
+        this.titleEl.textContent = this.currentSurah;
+        this.subtitleEl.textContent = `Verse 1 of ${this.totalVerses} · Al-Afasy`;
+        this.isPlaying = false;
+        this._stopSyncLoop();
+        morphIcon(this.playBtn.querySelector('svg'), 'play');
+        this._setNavaRings(false);
+        this._stopWaveform();
+
+        console.log('[AudioPlayer] Surah loaded. Ready to play:', this.totalVerses, 'verses (everyayah.com)');
+    }
+
     destroy() {
         this.audio.pause();
         this.audio.src = '';
+        this._advanceLock = false;
+        this._userPaused = false;
+        this._destroyPrefetch();
+        this._stopSyncLoop();
         this._stopWaveform();
         this._setNavaRings(false);
-        if (this.audioContext) this.audioContext.close();
         this.playerEl.remove();
+    }
+
+    _destroyPrefetch() {
+        if (this._prefetchedAudio) {
+            this._prefetchedAudio.src = '';
+            this._prefetchedAudio = null;
+        }
+        this._prefetchedIndex = -1;
+    }
+
+    // ── Gapless Verse Chain ──────────────────────────────────────────────────
+    //
+    // Bulletproof design: synchronous src swap + immediate .play() call.
+    // No async/await, no _advanceLock races, no retry loops on the critical path.
+    // Browser autoplay is guaranteed here because 'ended' is classified as a
+    // trusted event (same gesture chain as the original user-initiated play).
+    _playNextVerse() {
+        if (this._userPaused) return;
+
+        const nextIndex = this.activeVerseIndex + 1;
+
+        if (nextIndex >= this.totalVerses) {
+            // Reached the end of the Surah
+            this._setPlayingState(false);
+            this.titleEl.textContent = this.currentSurah;
+            this.subtitleEl.textContent = `Completed · ${this.totalVerses} verses`;
+            this._safeNotifyVerseChange(-1);
+            return;
+        }
+
+        const url = this.verseAudioUrls[nextIndex];
+        if (!url) return;
+
+        // Stop the rAF loop during src swap to avoid stale-time reads
+        this._stopSyncLoop();
+
+        // Swap src — if prefetched, the browser HTTP cache makes this instant
+        this.audio.src = url;
+        this._destroyPrefetch();
+
+        // Update state IMMEDIATELY so the UI stays in sync
+        this.activeVerseIndex = nextIndex;
+        const ayah = this.currentSurahAyahs[nextIndex];
+        this.subtitleEl.textContent = `Verse ${ayah.numberInSurah} of ${this.totalVerses} · Al-Afasy`;
+
+        // Fire verse change NOW — don't wait for play() to resolve.
+        // This eliminates the 100-300ms lag where the old verse was still shown.
+        this._safeNotifyVerseChange(nextIndex);
+
+        // Immediate play — 'ended' is a trusted event, autoplay is allowed
+        this.audio.play()
+            .then(() => {
+                // Restart the rAF sync loop once audio is flowing
+                this._setPlayingState(true);
+                console.log('[AudioPlayer] Gapless advance to verse', nextIndex + 1);
+            })
+            .catch((err) => {
+                console.error('[AudioPlayer] Autoplay prevented on advance:', err);
+                this._setPlayingState(false);
+                this.subtitleEl.textContent = `Tap to continue · Verse ${nextIndex + 1}`;
+            });
+    }
+
+    _checkPrefetch() {
+        if (!this.isPlaying || this._userPaused) return;
+        const duration = this.audio.duration;
+        if (!Number.isFinite(duration) || duration <= 0) return;
+
+        const progress = this.audio.currentTime / duration;
+        if (progress >= 0.8) {
+            const nextIndex = this.activeVerseIndex + 1;
+            if (nextIndex < this.totalVerses && this._prefetchedIndex !== nextIndex) {
+                this._prefetchNextVerse(nextIndex);
+            }
+        }
+    }
+
+    _prefetchNextVerse(index) {
+        const url = this.verseAudioUrls[index];
+        if (!url) return;
+
+        // Clean up previous prefetch
+        if (this._prefetchedAudio) {
+            this._prefetchedAudio.src = '';
+            this._prefetchedAudio = null;
+        }
+
+        this._prefetchedIndex = index;
+        const prefetch = new Audio();
+        prefetch.preload = 'auto';
+        // No crossOrigin — same CDN CORS restriction as main audio element
+        prefetch.src = url;
+        this._prefetchedAudio = prefetch;
+        console.log('[AudioPlayer] Prefetching verse', index + 1);
+    }
+
+    _safeNotifyVerseChange(verseIndex) {
+        if (!this.onVerseChange) return;
+        try {
+            this.onVerseChange(verseIndex);
+        } catch (err) {
+            console.error('[AudioPlayer] onVerseChange callback failed:', err);
+        }
+    }
+
+    _startSyncLoop() {
+        if (this._syncRafId) return;
+
+        const tick = () => {
+            if (!this.isPlaying || !this.audio || this.audio.paused) {
+                this._syncRafId = null;
+                return;
+            }
+
+            if (this.onPlaybackFrame) {
+                const duration = Number.isFinite(this.audio.duration) ? this.audio.duration : 0;
+                const currentTime = this.audio.currentTime || 0;
+                const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0;
+
+                try {
+                    this.onPlaybackFrame({
+                        verseIndex: this.activeVerseIndex,
+                        currentTime,
+                        duration,
+                        progress
+                    });
+                } catch (err) {
+                    console.error('[AudioPlayer] onPlaybackFrame callback failed:', err);
+                }
+            }
+
+            this._syncRafId = requestAnimationFrame(tick);
+        };
+
+        this._syncRafId = requestAnimationFrame(tick);
+    }
+
+    _stopSyncLoop() {
+        if (!this._syncRafId) return;
+        cancelAnimationFrame(this._syncRafId);
+        this._syncRafId = null;
+    }
+
+    async _playWithRetry(maxAttempts = 3) {
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                await this.audio.play();
+                return true;
+            } catch (err) {
+                if (attempt >= maxAttempts) {
+                    console.error('[AudioPlayer] play() failed after retries:', err);
+                    return false;
+                }
+                await new Promise(resolve => setTimeout(resolve, 120 * attempt));
+            }
+        }
+        return false;
     }
 }

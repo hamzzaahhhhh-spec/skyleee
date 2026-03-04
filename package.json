@@ -10,5 +10,11 @@
   },
   "devDependencies": {
     "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.1.0",
+    "@capacitor/haptics": "^8.0.1",
+    "gsap": "^3.14.2",
+    "motion": "^12.34.5"
   }
 }

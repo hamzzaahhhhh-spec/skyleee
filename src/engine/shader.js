@@ -98,8 +98,8 @@ export class DivineLight {
         const w = this.width;
         const h = this.height;
 
-        // Clear with base color
-        ctx.fillStyle = '#FAFAFA';
+        // Clear with base color (Soft Cream)
+        ctx.fillStyle = '#FDFCF9';
         ctx.fillRect(0, 0, w, h);
 
         // Teal orb (primary, follows cursor)
@@ -111,13 +111,13 @@ export class DivineLight {
             'rgba(0, 191, 165, 0)'
         );
 
-        // Gold orb (secondary, inverse movement)
+        // Lavender orb (secondary, inverse movement)
         this._drawOrb(ctx,
             w * (1 - this.mouseX * 0.3 + Math.sin(this.time * 0.6) * 0.04),
             h * (0.65 + Math.cos(this.time * 0.4) * 0.08),
             Math.max(w, h) * 0.38,
-            `rgba(212, 175, 55, ${0.04 + Math.cos(this.time * 1.2) * 0.015})`,
-            'rgba(212, 175, 55, 0)'
+            `rgba(180, 160, 230, ${0.04 + Math.cos(this.time * 1.2) * 0.015})`,
+            'rgba(180, 160, 230, 0)'
         );
 
         // Subtle cool accent
